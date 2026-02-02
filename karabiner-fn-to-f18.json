@@ -2,7 +2,7 @@
     "title": "Wispr Clone - Fn/Globe to F18",
     "rules": [
         {
-            "description": "Map fn/globe key to F18 for Wispr Clone",
+            "description": "Map fn/globe key to F18 for Wispr Clone (no output)",
             "manipulators": [
                 {
                     "type": "basic",
@@ -11,7 +11,8 @@
                     },
                     "to": [
                         {
-                            "key_code": "f18"
+                            "key_code": "f18",
+                            "modifiers": ["fn"]
                         }
                     ]
                 },
@@ -22,7 +23,8 @@
                     },
                     "to": [
                         {
-                            "key_code": "f18"
+                            "key_code": "f18",
+                            "modifiers": ["fn"]
                         }
                     ]
                 }

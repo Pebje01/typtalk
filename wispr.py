@@ -40,6 +40,7 @@ class WisprClone:
         # Rate limiting
         self.request_times = []
         self.last_request_time = 0
+        self.recording_start_time = 0
 
         # Kosten tracking
         self.cost_file = Path(config.COST_FILE).expanduser()
@@ -184,6 +185,7 @@ class WisprClone:
 
         self.recording = True
         self.audio_data = []
+        self.recording_start_time = time.time()
         self._log("Opname gestart... Spreek nu.")
 
         def audio_callback(indata, frames, time_info, status):
@@ -191,6 +193,10 @@ class WisprClone:
                 self._log(f"Audio status: {status}")
             if self.recording:
                 self.audio_data.append(indata.copy())
+                # Auto-stop na 30 seconden
+                if time.time() - self.recording_start_time > 30:
+                    self._log("Auto-stop: max 30 seconden bereikt")
+                    self.recording = False
 
         self.stream = sd.InputStream(
             samplerate=config.SAMPLE_RATE,
@@ -416,6 +422,12 @@ class WisprClone:
         """Verwerk audio in een aparte thread."""
         if self.processing:
             self._log("Nog bezig met vorige opname, even wachten...")
+            return
+
+        # Minimum opnametijd (voorkomt hallucinaties bij te korte audio)
+        duration = len(audio) / config.SAMPLE_RATE
+        if duration < 0.5:
+            self._log(f"Opname te kort ({duration:.1f}s), genegeerd.")
             return
 
         self.processing = True
