@@ -56,6 +56,14 @@ class WisprClone:
         if config.DEBUG:
             print(f"[Wispr] {message}", flush=True)
 
+    def _notify(self, title: str, message: str):
+        """Toon macOS popup."""
+        import subprocess
+        subprocess.run([
+            "osascript", "-e",
+            f'display dialog "{message}" with title "{title}" buttons {{"OK"}} default button "OK"'
+        ], capture_output=True)
+
     def _check_rate_limit(self) -> bool:
         """Check of we binnen de rate limit zijn. Returns True als OK."""
         now = time.time()
@@ -117,8 +125,10 @@ class WisprClone:
         # Waarschuwingen
         if self.monthly_cost >= config.BUDGET_LIMIT:
             self._log(f"BUDGET LIMIET BEREIKT! €{self.monthly_cost:.2f} deze maand. API uitgeschakeld.")
+            self._notify("Wispr Clone - Budget Op!", f"€{self.monthly_cost:.2f} bereikt. Transcriptie gestopt.")
         elif self.monthly_cost >= config.BUDGET_WARNING and not self.budget_warning_shown:
             self._log(f"WAARSCHUWING: €{self.monthly_cost:.2f} deze maand (limiet: €{config.BUDGET_LIMIT})")
+            self._notify("Wispr Clone - Budget Waarschuwing", f"€{self.monthly_cost:.2f} van €{config.BUDGET_LIMIT} gebruikt.")
             self.budget_warning_shown = True
 
     def _check_budget(self) -> bool:
