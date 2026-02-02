@@ -1,0 +1,32 @@
+{
+    "title": "Wispr Clone - Fn/Globe to F18",
+    "rules": [
+        {
+            "description": "Map fn/globe key to F18 for Wispr Clone",
+            "manipulators": [
+                {
+                    "type": "basic",
+                    "from": {
+                        "key_code": "fn"
+                    },
+                    "to": [
+                        {
+                            "key_code": "f18"
+                        }
+                    ]
+                },
+                {
+                    "type": "basic",
+                    "from": {
+                        "apple_vendor_top_case_key_code": "keyboard_fn"
+                    },
+                    "to": [
+                        {
+                            "key_code": "f18"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

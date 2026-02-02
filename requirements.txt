@@ -1,0 +1,6 @@
+pynput
+sounddevice
+numpy
+scipy
+requests
+openai-whisper
