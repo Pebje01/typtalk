@@ -12,31 +12,13 @@ HOTKEY = "f18"  # fn toets (via Karabiner-Elements mapping)
 # HOTKEY = "cmd_r"   # Rechter Command
 
 # Whisper configuratie
-WHISPER_MODEL = "small"  # Opties: tiny, base, small, medium, large
+WHISPER_MODEL = "small"  # Opties: tiny, base, small, medium, large (alleen voor lokaal)
 WHISPER_LANGUAGE = "nl"  # Nederlands
-WHISPER_PROMPT = """Nederlands. TypTalk, Whisper, Gemini, API, Claude, OpenAI, Python, JavaScript, TypeScript, React, VS Code, GitHub, terminal, code, programmeren, software, developer, functie, variabele, database, server, frontend, backend."""
+WHISPER_PROMPT = """Nederlands. TypTalk, API, Claude, OpenAI, Python, JavaScript, TypeScript, React, VS Code, GitHub, terminal, code, programmeren, software, developer, functie, variabele, database, server, frontend, backend."""
 
-# Ollama configuratie
-OLLAMA_URL = "http://localhost:11434/api/chat"
-OLLAMA_MODEL = "mistral"  # Beter voor grammatica correctie
-OLLAMA_ENABLED = False  # Zet op True voor Ollama grammatica correctie
-
-# Gemini configuratie (aanbevolen voor grammatica correctie)
-GEMINI_ENABLED = False  # Uit voor snelheid, OpenAI Whisper is al goed genoeg
-GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"  # Vul je eigen key in
-GEMINI_MODEL = "gemini-2.0-flash"
-
-# OpenAI configuratie (voor snellere Whisper)
+# OpenAI Whisper API configuratie
 OPENAI_API_KEY = "YOUR_OPENAI_API_KEY_HERE"  # Vul je eigen key in
-OPENAI_WHISPER_ENABLED = True  # Gebruik cloud Whisper (sneller) ipv lokaal
-
-# System prompt voor tekstverbetering
-OLLAMA_SYSTEM = """Taak: Corrigeer de Nederlandse tekst.
-Regels:
-- Fix alleen spelling en grammatica
-- Behoud alle woorden en betekenis
-- Output ALLEEN de gecorrigeerde tekst
-- GEEN uitleg, GEEN commentaar, GEEN aanhalingstekens"""
+OPENAI_WHISPER_ENABLED = True  # True = OpenAI API (snel), False = lokaal model (langzamer maar gratis)
 
 # Audio configuratie
 SAMPLE_RATE = 16000  # Whisper verwacht 16kHz

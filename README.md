@@ -1,102 +1,141 @@
 # TypTalk - Voice to Text for macOS
 
-Een privacy-first spraak-naar-tekst tool die spraak opneemt via een hotkey, transcribeert met Whisper, en de tekst direct typt waar de cursor staat.
+Privacy-first voice-to-text tool voor macOS. Houd de fn toets ingedrukt, spreek, en de tekst wordt automatisch getypt waar je cursor staat.
 
-## Installatie
+## ✨ Features
 
-### 1. Python Dependencies
+- 🎤 **fn toets hotkey** - Houd fn in, spreek, laat los
+- ⚡ **Supersnel** - 0.8s transcriptie via OpenAI Whisper API
+- 🔒 **Privacy optie** - Kies tussen cloud (snel) of lokaal (privé)
+- 💰 **Budget tracking** - Automatische kostenbewaking
+- 🚀 **Altijd aan** - Draait op de achtergrond via Launch Agent
+- 📝 **Tech-aware** - Herkent Python, JavaScript, VS Code, GitHub, etc.
 
-```bash
-cd ~/typtalk
-pip install -r requirements.txt
-```
+## 🚀 Snelle Start
 
-### 2. Ollama Installeren
-
-```bash
-# Installeer Ollama
-brew install ollama
-
-# Start Ollama service
-ollama serve
-
-# Download een model (in een nieuwe terminal)
-ollama pull llama3.2
-```
-
-### 3. Karabiner-Elements (Optioneel, voor fn-toets)
-
-Als je de fn-toets wilt gebruiken als hotkey:
+### 1. Installeer Karabiner-Elements (voor fn toets)
 
 ```bash
-# Installeer Karabiner-Elements
 brew install --cask karabiner-elements
 ```
 
-Na installatie:
-1. Open Karabiner-Elements
-2. Ga naar "Complex Modifications"
-3. Klik "Add rule" → "Import more rules from the Internet"
-4. Of kopieer `karabiner-fn-to-f18.json` naar `~/.config/karabiner/assets/complex_modifications/`
-5. Activeer de "Map fn key to F18" regel
+Configureer fn → F18 mapping:
+```bash
+cp karabiner-fn-to-f18.json ~/.config/karabiner/assets/complex_modifications/
+```
 
-### 4. macOS Permissies
+Open Karabiner-Elements → Complex Modifications → Add rule → Activeer "Map fn key to F18"
 
-Het script heeft de volgende permissies nodig:
-- **Accessibility**: Voor keyboard input/output (Systeemvoorkeuren → Privacy & Beveiliging → Accessibility)
-- **Microphone**: Voor audio opname (wordt automatisch gevraagd)
-
-## Gebruik
+### 2. Installeer Python dependencies
 
 ```bash
-cd ~/typtalk
+git clone https://github.com/JOUW_USERNAME/typtalk.git
+cd typtalk
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 3. Configureer API key
+
+```bash
+cp config.example.py config.py
+```
+
+Vul je OpenAI API key in in `config.py`:
+```python
+OPENAI_API_KEY = "sk-proj-..."
+```
+
+### 4. Start TypTalk
+
+```bash
 python typtalk.py
 ```
 
-1. Houd de hotkey ingedrukt (standaard: F18)
-2. Spreek je tekst in
-3. Laat de hotkey los
-4. Wacht even terwijl de tekst wordt verwerkt
-5. De verbeterde tekst wordt automatisch getypt waar je cursor staat
+Houd fn ingedrukt, spreek, laat los → tekst wordt getypt! 🎉
 
-Druk `Ctrl+C` om te stoppen.
+## 🔧 Auto-start bij login
 
-## Configuratie
+```bash
+# Installeer Launch Agent
+launchctl load ~/Library/LaunchAgents/com.typtalk.plist
+```
 
-Pas `config.py` aan voor je voorkeuren:
+TypTalk start nu automatisch bij inloggen en draait altijd op de achtergrond.
+
+## ⚙️ Configuratie
+
+Pas `config.py` aan:
 
 ```python
-# Hotkey opties
-HOTKEY = "f18"      # Standaard (via Karabiner)
-HOTKEY = "alt_r"    # Rechter Option toets
-HOTKEY = "ctrl_r"   # Rechter Control toets
+# Hotkey (vereist Karabiner voor fn)
+HOTKEY = "f18"      # fn toets (aanbevolen)
+# HOTKEY = "alt_r"  # of rechter Option toets
 
-# Whisper model (groter = nauwkeuriger maar langzamer)
-WHISPER_MODEL = "base"   # Snel
-WHISPER_MODEL = "small"  # Nauwkeuriger
+# Whisper mode
+OPENAI_WHISPER_ENABLED = True   # Snel (OpenAI API)
+# OPENAI_WHISPER_ENABLED = False  # Lokaal (gratis maar langzamer)
 
-# Ollama model
-OLLAMA_MODEL = "llama3.2"  # Standaard
-OLLAMA_MODEL = "mistral"   # Alternatief
+# Budget limieten
+BUDGET_WARNING = 10.0  # Waarschuwing bij €10
+BUDGET_LIMIT = 20.0    # Stop bij €20
 ```
 
-## Probleemoplossing
+## 💰 Kosten
 
-### "Ollama niet bereikbaar"
-Zorg dat Ollama draait:
-```bash
-ollama serve
-```
+**OpenAI Whisper API:** ~€0.006 per minuut audio
+- 100 opnames/dag @ 10 sec = ~€3/maand
+- Budget alerts bij €10 en €20
+
+**Lokaal Whisper:** Gratis maar langzamer (~5-10s per opname)
+
+## 🛠️ Probleemoplossing
+
+### fn toets werkt niet
+1. Check of Karabiner-Elements draait
+2. Verificeer F18 mapping: Open Karabiner → Complex Modifications
+3. Test met `python test_fn_key.py` (moet "F18 DETECTED!" tonen)
 
 ### Hotkey werkt niet
-1. Check of je de juiste permissies hebt gegeven (Accessibility)
-2. Probeer een andere hotkey in `config.py`
-3. Als je F18 gebruikt, check of Karabiner correct is geconfigureerd
+1. Check Accessibility permissions: Systeemvoorkeuren → Privacy → Accessibility
+2. Voeg Python.app toe aan de lijst
+3. Herstart TypTalk
 
 ### Geen audio
-1. Check microphone permissies
-2. Test je microfoon in een andere app
+1. Check microphone permissions
+2. Test microfoon in andere app
 
-### Trage verwerking
-- Gebruik een kleiner Whisper model (`tiny` of `base`)
-- Gebruik een sneller Ollama model
+### Logs bekijken
+```bash
+tail -f /tmp/typtalk.log
+```
+
+## 📁 Bestanden
+
+```
+typtalk/
+├── typtalk.py                    # Main app
+├── config.py                     # Je persoonlijke config (niet in git)
+├── config.example.py             # Template config
+├── start_typtalk.sh              # Launch Agent starter
+├── karabiner-fn-to-f18.json      # Karabiner config
+├── test_fn_key.py                # Test fn toets detectie
+└── requirements.txt              # Python dependencies
+```
+
+## 🎯 Tech Stack
+
+- **Python 3.14**
+- **OpenAI Whisper API** (of lokaal Whisper model)
+- **Karabiner-Elements** (fn toets mapping)
+- **pynput** (keyboard events & typing)
+- **sounddevice** (audio recording)
+
+## 📝 License
+
+MIT
+
+## 🙏 Credits
+
+Gebouwd met [Claude Code](https://claude.com/claude-code)

@@ -114,12 +114,12 @@ class TypTalk:
         except Exception as e:
             self._log(f"Kon kosten niet opslaan: {e}")
 
-    def _add_cost(self, tokens: int):
-        """Voeg kosten toe (Gemini Flash pricing)."""
-        # Gemini Flash: $0.075/1M input + $0.30/1M output ≈ $0.40/1M tokens totaal
+    def _add_cost(self, audio_seconds: float):
+        """Voeg kosten toe voor OpenAI Whisper API."""
+        # OpenAI Whisper: $0.006 per minuut
         # Omgerekend naar euro (€0.92 per $1)
-        cost_per_token = 0.0000004 * 0.92  # €0.00000037 per token
-        cost = tokens * cost_per_token
+        cost_per_minute = 0.006 * 0.92  # €0.00552 per minuut
+        cost = (audio_seconds / 60) * cost_per_minute
         self.monthly_cost += cost
         self._save_costs()
 
@@ -290,118 +290,6 @@ class TypTalk:
             self._log(f"OpenAI Whisper fout: {e}, fallback naar lokaal...")
             return self._transcribe_local(audio_path)
 
-    def _improve_with_ollama(self, text: str) -> str:
-        """Verbeter tekst met Ollama."""
-        if not text:
-            return text
-
-        # Rate limit check
-        if not self._check_rate_limit():
-            return text
-
-        self._log("Verbeteren met Ollama...")
-        self._register_request()
-
-        try:
-            response = requests.post(
-                config.OLLAMA_URL,
-                json={
-                    "model": config.OLLAMA_MODEL,
-                    "messages": [
-                        {"role": "system", "content": config.OLLAMA_SYSTEM},
-                        {"role": "user", "content": text}
-                    ],
-                    "stream": False
-                },
-                timeout=30
-            )
-            response.raise_for_status()
-
-            result = response.json()
-            improved_text = result.get("message", {}).get("content", text).strip()
-
-            # Pak alleen de eerste regel (voorkomt dat LLM gaat "praten")
-            first_line = improved_text.split('\n')[0].strip()
-
-            # Als de output veel langer is dan de input, gebruik dan de input
-            if len(first_line) > len(text) * 2:
-                self._log("Ollama output te lang, origineel gebruikt.")
-                return text
-
-            self._log(f"Verbeterd: {first_line}")
-            return first_line
-
-        except requests.exceptions.ConnectionError:
-            self._log("WAARSCHUWING: Ollama niet bereikbaar. Originele tekst wordt gebruikt.")
-            return text
-        except requests.exceptions.Timeout:
-            self._log("WAARSCHUWING: Ollama timeout. Originele tekst wordt gebruikt.")
-            return text
-        except Exception as e:
-            self._log(f"WAARSCHUWING: Ollama fout: {e}. Originele tekst wordt gebruikt.")
-            return text
-
-    def _improve_with_gemini(self, text: str) -> str:
-        """Verbeter tekst met Gemini API."""
-        if not text:
-            return text
-
-        if not config.GEMINI_API_KEY:
-            self._log("Geen Gemini API key geconfigureerd.")
-            return text
-
-        # Rate limit en budget check
-        if not self._check_rate_limit() or not self._check_budget():
-            return text
-
-        self._log("Verbeteren met Gemini...")
-        self._register_request()
-
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{config.GEMINI_MODEL}:generateContent?key={config.GEMINI_API_KEY}"
-
-            payload = {
-                "contents": [{
-                    "parts": [{
-                        "text": f"Fix spelfouten en zet interpunctie goed (punten, komma's). Behoud de woorden. Geef alleen de tekst terug:\n\n{text}"
-                    }]
-                }],
-                "generationConfig": {
-                    "temperature": 0.1,
-                    "maxOutputTokens": 500
-                }
-            }
-
-            # Probeer max 2 keer met retry bij rate limit
-            for attempt in range(2):
-                response = requests.post(url, json=payload, timeout=10)
-                if response.status_code == 429 and attempt == 0:
-                    self._log("Rate limit, 2 sec wachten...")
-                    time.sleep(2)
-                    continue
-                break
-            response.raise_for_status()
-
-            result = response.json()
-            improved_text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
-
-            # Kosten bijhouden (schatting: input + output tokens)
-            total_tokens = len(text.split()) + len(improved_text.split())
-            self._add_cost(total_tokens * 2)  # ~2 tokens per woord
-
-            # Pak alleen eerste regel
-            first_line = improved_text.split('\n')[0].strip()
-
-            if len(first_line) > len(text) * 2:
-                self._log("Gemini output te lang, origineel gebruikt.")
-                return text
-
-            self._log(f"Verbeterd: {first_line}")
-            return first_line
-
-        except Exception as e:
-            self._log(f"WAARSCHUWING: Gemini fout: {e}. Originele tekst wordt gebruikt.")
-            return text
 
     def _type_text(self, text: str):
         """Typ tekst waar de cursor staat (via clipboard voor snelheid)."""
@@ -449,19 +337,11 @@ class TypTalk:
                 self._log("Geen tekst gedetecteerd.")
                 return
 
-            # Verbeter met Gemini of Ollama indien ingeschakeld
-            t2 = time.time()
-            if config.GEMINI_ENABLED and len(text.split()) >= 3:
-                improved_text = self._improve_with_gemini(text)
-                self._log(f"[TIMING] Gemini: {time.time() - t2:.1f}s")
-            elif config.OLLAMA_ENABLED and len(text.split()) >= 3:
-                improved_text = self._improve_with_ollama(text)
-                self._log(f"[TIMING] Ollama: {time.time() - t2:.1f}s")
-            else:
-                improved_text = text
+            # Track kosten (Whisper API)
+            self._add_cost(duration)
 
             # Typ de tekst
-            self._type_text(improved_text)
+            self._type_text(text)
 
             self._log(f"[TIMING] Totaal: {time.time() - start_total:.1f}s")
 
@@ -513,17 +393,6 @@ class TypTalk:
 def check_dependencies():
     """Controleer of alle dependencies beschikbaar zijn."""
     errors = []
-
-    # Check Ollama
-    try:
-        response = requests.get("http://localhost:11434/api/tags", timeout=5)
-        if response.status_code != 200:
-            errors.append("Ollama draait niet. Start met: ollama serve")
-    except requests.exceptions.ConnectionError:
-        errors.append("Ollama niet bereikbaar. Installeer en start Ollama:")
-        errors.append("  brew install ollama")
-        errors.append("  ollama serve")
-        errors.append(f"  ollama pull {config.OLLAMA_MODEL}")
 
     # Check audio devices
     try:
