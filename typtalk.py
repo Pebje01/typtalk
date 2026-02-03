@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Wispr Flow Clone - Spraak naar tekst met AI verbetering
+TypTalk - Spraak naar tekst met AI verbetering
 
 Gebruik:
-1. Start het script: python wispr.py
+1. Start het script: python typtalk.py
 2. Houd de hotkey ingedrukt en spreek
 3. Laat de hotkey los
 4. De verbeterde tekst wordt automatisch getypt
@@ -27,7 +27,7 @@ from pynput.keyboard import Controller, Key
 import config
 
 
-class WisprClone:
+class TypTalk:
     def __init__(self):
         self.recording = False
         self.audio_data = []
@@ -40,13 +40,14 @@ class WisprClone:
         # Rate limiting
         self.request_times = []
         self.last_request_time = 0
+        self.recording_start_time = 0
 
         # Kosten tracking
         self.cost_file = Path(config.COST_FILE).expanduser()
         self.monthly_cost = self._load_costs()
         self.budget_warning_shown = False
 
-        self._log("Wispr Clone initialiseren...")
+        self._log("TypTalk initialiseren...")
         self._load_whisper_model()
         self._log(f"Hotkey: {config.HOTKEY}")
         self._log("Gereed! Houd de hotkey ingedrukt om te spreken.")
@@ -54,7 +55,15 @@ class WisprClone:
     def _log(self, message: str):
         """Print debug berichten indien ingeschakeld."""
         if config.DEBUG:
-            print(f"[Wispr] {message}", flush=True)
+            print(f"[TypTalk] {message}", flush=True)
+
+    def _notify(self, title: str, message: str):
+        """Toon macOS popup."""
+        import subprocess
+        subprocess.run([
+            "osascript", "-e",
+            f'display dialog "{message}" with title "{title}" buttons {{"OK"}} default button "OK"'
+        ], capture_output=True)
 
     def _check_rate_limit(self) -> bool:
         """Check of we binnen de rate limit zijn. Returns True als OK."""
@@ -117,8 +126,10 @@ class WisprClone:
         # Waarschuwingen
         if self.monthly_cost >= config.BUDGET_LIMIT:
             self._log(f"BUDGET LIMIET BEREIKT! €{self.monthly_cost:.2f} deze maand. API uitgeschakeld.")
+            self._notify("TypTalk - Budget Op!", f"€{self.monthly_cost:.2f} bereikt. Transcriptie gestopt.")
         elif self.monthly_cost >= config.BUDGET_WARNING and not self.budget_warning_shown:
             self._log(f"WAARSCHUWING: €{self.monthly_cost:.2f} deze maand (limiet: €{config.BUDGET_LIMIT})")
+            self._notify("TypTalk - Budget Waarschuwing", f"€{self.monthly_cost:.2f} van €{config.BUDGET_LIMIT} gebruikt.")
             self.budget_warning_shown = True
 
     def _check_budget(self) -> bool:
@@ -174,6 +185,7 @@ class WisprClone:
 
         self.recording = True
         self.audio_data = []
+        self.recording_start_time = time.time()
         self._log("Opname gestart... Spreek nu.")
 
         def audio_callback(indata, frames, time_info, status):
@@ -181,6 +193,10 @@ class WisprClone:
                 self._log(f"Audio status: {status}")
             if self.recording:
                 self.audio_data.append(indata.copy())
+                # Auto-stop na 30 seconden
+                if time.time() - self.recording_start_time > 30:
+                    self._log("Auto-stop: max 30 seconden bereikt")
+                    self.recording = False
 
         self.stream = sd.InputStream(
             samplerate=config.SAMPLE_RATE,
@@ -408,6 +424,12 @@ class WisprClone:
             self._log("Nog bezig met vorige opname, even wachten...")
             return
 
+        # Minimum opnametijd (voorkomt hallucinaties bij te korte audio)
+        duration = len(audio) / config.SAMPLE_RATE
+        if duration < 0.5:
+            self._log(f"Opname te kort ({duration:.1f}s), genegeerd.")
+            return
+
         self.processing = True
         try:
             start_total = time.time()
@@ -469,7 +491,7 @@ class WisprClone:
         whisper_mode = "cloud (OpenAI)" if config.OPENAI_WHISPER_ENABLED else "lokaal"
 
         print("=" * 50)
-        print("Wispr Flow Clone")
+        print("TypTalk - Voice to Text")
         print("=" * 50)
         print(f"Hotkey: {hotkey_name}")
         print(f"Whisper: {whisper_mode}")
@@ -526,8 +548,8 @@ def main():
             print(f"  - {error}")
         print("\nHet script zal proberen te draaien, maar sommige functies werken mogelijk niet.\n")
 
-    wispr = WisprClone()
-    wispr.run()
+    typtalk = TypTalk()
+    typtalk.run()
 
 
 if __name__ == "__main__":

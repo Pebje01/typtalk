@@ -1,13 +1,13 @@
-# Wispr Flow Clone
+# TypTalk - Voice to Text for macOS
 
-Een Python-tool die spraak opneemt via een hotkey, transcribeert met Whisper, verbetert met Ollama, en de tekst direct typt waar de cursor staat.
+Een privacy-first spraak-naar-tekst tool die spraak opneemt via een hotkey, transcribeert met Whisper, en de tekst direct typt waar de cursor staat.
 
 ## Installatie
 
 ### 1. Python Dependencies
 
 ```bash
-cd ~/wispr-clone
+cd ~/typtalk
 pip install -r requirements.txt
 ```
 
@@ -49,8 +49,8 @@ Het script heeft de volgende permissies nodig:
 ## Gebruik
 
 ```bash
-cd ~/wispr-clone
-python wispr.py
+cd ~/typtalk
+python typtalk.py
 ```
 
 1. Houd de hotkey ingedrukt (standaard: F18)

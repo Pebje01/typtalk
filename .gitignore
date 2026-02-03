@@ -1,0 +1,30 @@
+# API Keys - NEVER commit!
+config.py
+.env
+*.key
+
+# Cost tracking
+.typtalk_costs.json
+.wispr_costs.json
+
+# User settings
+.typtalk_settings.json
+.typtalk_hotkey.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+
+# macOS
+.DS_Store
+*.log
+
+# Temporary files
+*.wav
+*.tmp
+temp/
