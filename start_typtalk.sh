@@ -14,7 +14,7 @@ sleep 1
 
 # Start daemon
 echo "🚀 TypTalk daemon starten..."
-./venv/bin/python3 typtalk_daemon.py > typtalk_daemon.log 2>&1 &
+./venv/bin/python3 typtalk_daemon_v2.py > typtalk_daemon.log 2>&1 &
 
 # Wacht en check
 sleep 3
