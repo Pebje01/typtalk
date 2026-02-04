@@ -19,7 +19,7 @@ echo "🚀 TypTalk daemon starten..."
 # Wacht en check
 sleep 3
 
-if pgrep -f "typtalk_daemon.py" > /dev/null; then
+if pgrep -f "typtalk_daemon" > /dev/null; then
     echo "✅ TypTalk daemon gestart!"
     echo ""
     echo "Fn-toets dictee is actief 🎤"

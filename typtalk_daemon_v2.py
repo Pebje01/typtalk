@@ -173,9 +173,9 @@ class TypTalkDaemon:
 
         elapsed = time.time() - self.recording_start_time
 
-        # Te kort
-        if elapsed < 0.5:
-            self._log(f"⏭️  Te kort ({elapsed:.1f}s)")
+        # Te kort (verhoogd naar 1 sec om hallucinations te voorkomen)
+        if elapsed < 1.0:
+            self._log(f"⏭️  Te kort ({elapsed:.1f}s) - voorkomt hallucinations")
             self.recording = False
             if self.stream:
                 self.stream.stop()
@@ -264,6 +264,21 @@ class TypTalkDaemon:
         """Typ tekst via clipboard."""
         if not text:
             return
+
+        # Filter Whisper hallucinations (stilte = YouTube ondertitels)
+        hallucinations = [
+            "ondertitels ingediend door de amara.org gemeenschap",
+            "ondertitels ingediend door de amara org gemeenschap",
+            "thanks for watching",
+            "subscribe",
+            "bedankt voor het kijken"
+        ]
+
+        text_lower = text.lower().strip()
+        for hallucination in hallucinations:
+            if hallucination in text_lower:
+                self._log(f"⚠️  Hallucination gedetecteerd, genegeerd: '{text}'")
+                return
 
         with self.typing_lock:
             self._log(f"✍️  '{text[:50]}...'")
