@@ -1,11 +1,30 @@
 #!/bin/bash
-# TypTalk starter script - draait altijd op de achtergrond
+# TypTalk Startup Script
 
-# Ga naar de juiste directory
-cd /Users/daleyjansen_1/typtalk
+cd "$(dirname "$0")"
 
-# Activeer virtual environment
-source venv/bin/activate
+# Stop oude daemon als die vast zit
+pkill -f typtalk_daemon 2>/dev/null
 
-# Start TypTalk
-exec python3 typtalk.py
+# Verwijder oude pipe
+rm -f ~/.typtalk_control
+
+# Wacht even
+sleep 1
+
+# Start daemon
+echo "🚀 TypTalk daemon starten..."
+./venv/bin/python3 typtalk_daemon.py > typtalk_daemon.log 2>&1 &
+
+# Wacht en check
+sleep 3
+
+if pgrep -f "typtalk_daemon.py" > /dev/null; then
+    echo "✅ TypTalk daemon gestart!"
+    echo ""
+    echo "Fn-toets dictee is actief 🎤"
+else
+    echo "❌ Fout bij starten"
+    cat typtalk_daemon.log
+    exit 1
+fi
