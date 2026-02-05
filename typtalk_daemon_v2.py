@@ -161,6 +161,7 @@ class TypTalkDaemon:
             samplerate=config.SAMPLE_RATE,
             channels=config.CHANNELS,
             dtype=np.float32,
+            device=config.AUDIO_INPUT_DEVICE,  # MacBook Pro microfoon!
             callback=audio_callback
         )
         self.stream.start()
